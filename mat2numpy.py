@@ -1,6 +1,7 @@
 from scipy.io import loadmat
 from os import listdir
 import numpy as np
+import operator
 
 
 #Loads .mat file into dictionary 
@@ -23,8 +24,33 @@ def tree(data):
 
     return out
 
+def to_hours(data):
+
+    def convert_date(date):
+
+        hours = 0
+        hours += date[0] * 8760
+        hours += date[1] * 730.001
+        hours += date[2] * 24
+        hours += date[3]
+
+        return hours
+
+    out = data.copy()
+
+    first = data[0][2]
+    out[0][2] = 0
+
+    for i, measure in enumerate(data[1:]):
+        date = measure[2]
+        hours_from_start = convert_date(list(map(operator.sub, date, first)))
+
+        out[i+1][2] = hours_from_start
+
+    return out
+
 #Resizes all .mat data in "Dataset" and writes each to "Dataset_np"
-def convert_data(target_dir='Dataset_np'):
+def convert_data(target_dir='Dataset_np', convert_date=False):
     print("[*] Finding files")
     pathnames = listdir("Dataset/")
 
@@ -53,6 +79,8 @@ def convert_data(target_dir='Dataset_np'):
 
         new_data = tree(x)
         new_data = np.array(new_data)
+
+        new_data = to_hours(new_data)
 
         np.save("Dataset_np/" + pathname, new_data, allow_pickle=True)
 
