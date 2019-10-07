@@ -33,8 +33,9 @@ def to_hours(data):
         hours += date[1] * 730.001
         hours += date[2] * 24
         hours += date[3]
+        hours += date[4]/60
 
-        return hours
+        return round(hours, 3)
 
     out = data.copy()
 

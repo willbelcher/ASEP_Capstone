@@ -3,13 +3,7 @@ from os import listdir
 import matplotlib.pyplot as plt
 import numpy as np
 
-
-charge_metrics = ["Voltage_measured", "Current_measured", "Temperature_measured", "Current_charge", "Voltage_charge", "Time"]
-discharge_metrics = ["Voltage_measured", "Current_measured", "Temperature_measured", "Current_charge", "Voltage_charge", "Time"] #Capacity is scalar
-impedance_metrics = ["Sense_current", "Battery_current", "Current_ratio", "Battery_impedance", "Rectified_impedance", "Re", "Rct"]
-metric_dict = {'charge': charge_metrics, 'discharge': discharge_metrics, 'impedance': impedance_metrics}
-
-measurment_metrics = {''}
+from extracter import extract
 
 def load_bat(bat_num):
     if not isinstance(bat_num, str):
@@ -22,14 +16,25 @@ def load_bat(bat_num):
 
     return file
 
+def list_bat_nums(filepath='Dataset_np/'):
+    files = listdir(filepath)
+
+    #Ugly as this is, apparently it's the fastest way to strip the battery number
+    #from the filename
+    out = [int(filename.replace('.npy', '').replace('B0', '').replace('B00', '')) for filename in files]
+    out.sort()
+
+    return out
+
+
 def one_measurement(battery_num, dat_type, metric1, metric2='Time', max_measurements=-1):
-    #Support for single and list types
+    #Support for string and list types
     if isinstance(metric1, str):
         metric1 = [metric1]
 
     data = load_bat(battery_num)
 
-    extr = extracter(data)
+    extr = extract(data)
     measures = extr.of_type(dat_type, num=max_measurements, metrics='all')
 
     num_measurements = len(measures)
@@ -39,6 +44,7 @@ def one_measurement(battery_num, dat_type, metric1, metric2='Time', max_measurem
             p = plot()
         else:
             p = plot(one_plot=False, num_plots=len(metric1))
+
         x = extr.get_metrics_from_measure(measure, metrics=metric2)
 
         for m in metric1:
@@ -54,73 +60,27 @@ def one_measurement(battery_num, dat_type, metric1, metric2='Time', max_measurem
 
     print()
 
-    def capacitance(battery_num):
-        data = load_bat(battery_num)
+def plot_capacitance(battery_num, metric2='Date', max_measurements=-1): #fix for empty capacitance values
+    data = load_bat(battery_num)
 
-        extr = extracter(data)
+    extr = extract(data)
+    dates = extr.get_measurement_info('discharge', metrics=metric2)
 
+    measures = extr.of_type('discharge')
 
-        
-class extracter():
+    num_measurements = len(measures)
 
-    def __init__(self, data):
-        self.data = data
+    x = dates
+    y = [extr.get_scalar_metrics_from_measure(measure) for measure in measures]
 
-    #Searches all data of a given type (charge, discharge) from a battery file
-    #and returns it
-    def of_type(self, dat_type, num=-1, metrics='all'):
-        out = []
-        counter = 0
+    p = plot()
+    p.plot_one_series(x, y, 'Capacity and {}'.format(metric2))
+    p.label_axes(metric2, 'Capacity')
 
-        if isinstance(dat_type, str):
-            dat_type = [dat_type]
+    print('Showing Capactity vs. {} : Battery {} : Entries {}'.format(metric2, battery_num, num_measurements))
+    p.show_plot()
+    p.close()
 
-        for measure in self.data:
-            if measure[0] in dat_type:
-                if metrics == 'all':
-                    out.append(measure)
-                else:
-                    out.append(self.get_metrics_from_measure(measure, metrics=metrics))
-
-                counter += 1
-
-                if counter == num:
-                    break
-
-        return out
-
-    #Takes in one measurement and returns a list of the corresponding
-    #metrics, eg. [Voltage measured, time]
-    def get_metrics_from_measure(self, measure, metrics='all'):
-        out = []
-        
-        if isinstance(metrics, str) and metrics != 'all':
-            metrics = [metrics]
-
-        dat_type = measure[0]
-        metric_map = metric_dict[dat_type]
-
-        #pos are the indecies in measure that contain the
-        #corresponding metrics
-        #It probably isn't the most elegant way to do this...
-        if metrics == 'all':
-            pos = range(0, len(metric_map)-1)
-        else:
-            pos = [metric_map.index(met) for met in metrics]
-
-        for ind in pos:
-            out.append(measure[3][ind])
-
-        return out
-
-    def get_measurement_info(self, dat_type, metrics='all', num=-1):
-        out = []
-            
-        if isinstance(metrics, str) and metrics != 'all':
-            metrics = [metrics]
-
-        
-    
 
 class plot():
 
