@@ -1,8 +1,9 @@
 import numpy as np
+from os import listdir
 
 charge_metrics = ["Voltage_measured", "Current_measured", "Temperature_measured", "Current_charge", "Voltage_charge", "Time"]
 discharge_metrics = ["Voltage_measured", "Current_measured", "Temperature_measured", "Current_charge", "Voltage_charge", "Time"] #Capacity is scalar
-impedance_metrics = ["Sense_current", "Battery_current", "Current_ratio", "Battery_impedance", "Rectified_impedance"] #Re and Rct are scalar
+impedance_metrics = ["Sense_current", "Battery_current", "Current_ratio", "Battery_impedance", "Rectified_impedance", "Time"] #Re and Rct are scalar
 metric_dict = {'charge': charge_metrics, 'discharge': discharge_metrics, 'impedance': impedance_metrics}
 
 charge_scalar = []
@@ -12,14 +13,37 @@ measurement_dict = {'charge': charge_scalar, 'discharge': discharge_scalar, 'imp
 
 measurement_info = ['Ambient_temperature', 'Date']
 
+def load_bat(bat_num):
+    if not isinstance(bat_num, str):
+        bat_num = str(bat_num)
+
+    filename = "B{}.npy".format(bat_num.rjust(4, '0'))
+    file = np.load("Dataset_np/" + filename, allow_pickle=True)
+
+    print("[*]Loaded: {} with {} entries".format(filename, len(file)))
+
+    return file
+
+def list_bat_nums(filepath='Dataset_np/'):
+    files = listdir(filepath)
+
+    #Ugly as this is, apparently it's the fastest way to strip the battery number
+    #from the filename
+    out = [int(filename.replace('.npy', '').replace('B0', '').replace('B00', '')) for filename in files]
+    out.sort()
+
+    return out
+
 class extract():
+
+    prev_capacities = [0, 0]
 
     def __init__(self, data):
         self.data = data
 
     #Searches all data of a given type (charge, discharge) from a battery file
     #and returns it
-    def of_type(self, dat_type, num=-1, metrics='all'):
+    def of_type(self, dat_type, metrics='all', num=-1):
         out = []
         counter = 0
 
@@ -115,7 +139,9 @@ class extract():
            
         if 'Capacity' in metrics: #dat_type is implicitly discharge
             temp = measure[3][6]
-            if(isinstance(temp, np.ndarray)): return 0
+
+            if(isinstance(temp, np.ndarray)):
+                return 0
             else: return temp
 
         if 'Re' in metrics:
