@@ -17,6 +17,9 @@ class plot():
 
         self.ax.plot(x_data, y_data, label=label)
 
+    def set_scale(self, axes):
+        plt.axis(axes)
+
     def label_axes(self, x_label, y_label, label='none'):
         plt.xlabel(x_label)
         plt.ylabel(y_label)

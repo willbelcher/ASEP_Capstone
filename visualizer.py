@@ -19,8 +19,11 @@ def one_measurement(battery_num, dat_type, metric1, metric2='Time', num=-1):
         else:
             p = plot(one_plot=False, num_plots=len(metric1))
 
-        x = extr.get_metrics_from_measure(measure, metrics=metric2)[0]
+        if dat_type != 'impedance': 
+            x = extr.get_metrics_from_measure(measure, metrics=metric2)[0]
+
         y = extr.get_metrics_from_measure(measure, metrics=metric1)
+
 
         for sub_y, m in zip(y, metric1):
 
@@ -59,7 +62,7 @@ def plot_capacitance(battery_num, metric2='Date', max_measurements=-1): #fix for
 
     p = plot()
     p.plot_one_series(x, y, 'Capacity and {}'.format(metric2))
-    p.label_axes(metric2, 'Capacity')
+    p.label_axes(metric2, 'Capacity (Ahr)')
 
     print('Showing Capactity vs. {} : Battery {} : Entries {}'.format(metric2, battery_num, num_measurements))
     p.show_plot()

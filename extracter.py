@@ -3,7 +3,7 @@ from os import listdir
 
 charge_metrics = ["Voltage_measured", "Current_measured", "Temperature_measured", "Current_charge", "Voltage_charge", "Time"]
 discharge_metrics = ["Voltage_measured", "Current_measured", "Temperature_measured", "Current_charge", "Voltage_charge", "Time"] #Capacity is scalar
-impedance_metrics = ["Sense_current", "Battery_current", "Current_ratio", "Battery_impedance", "Rectified_impedance", "Time"] #Re and Rct are scalar
+impedance_metrics = ["Sense_current", "Battery_current", "Current_ratio", "Battery_impedance", "Rectified_impedance"] #Re and Rct are scalar
 metric_dict = {'charge': charge_metrics, 'discharge': discharge_metrics, 'impedance': impedance_metrics}
 
 charge_scalar = []
@@ -33,6 +33,7 @@ def list_bat_nums(filepath='Dataset_np/'):
     out.sort()
 
     return out
+
 
 class extract():
 

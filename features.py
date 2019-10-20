@@ -3,6 +3,7 @@ import numpy as np
 from extracter import *
 from plot import plot
 
+
 def plot_all_bats(x, label):
     bat_nums = list_bat_nums()
 
@@ -73,6 +74,26 @@ def min_discharge_voltage_measured():
 
     return data
 
+def min_discharge_voltage_charge():
+    bat_nums = list_bat_nums()
+
+    data = np.empty(len(bat_nums), dtype=np.object)
+
+    for i, n in enumerate(bat_nums):
+        file = load_bat(n)
+        e = extract(file)
+
+        measures = e.of_type('discharge', ['Voltage_charge', 'Time'])
+        temp = np.empty(len(measures))
+
+        for i2, measure in enumerate(measures):
+            ind = np.argmin(measure[0][1:])
+            temp[i2] = measure[1][ind]
+
+        data[i] = temp
+
+    return data
+
 #Absolute max 
 def absmax_charge_voltage_charge():
     bat_nums = list_bat_nums()
@@ -93,5 +114,87 @@ def absmax_charge_voltage_charge():
         data[i] = temp
 
     return data
-    
 
+def timeofmax_discharge_temperature():
+    bat_nums = list_bat_nums()
+
+    data = np.empty(len(bat_nums), dtype=np.object)
+
+    for i, n in enumerate(bat_nums):
+        file = load_bat(n)
+        e = extract(file)
+
+        measures = e.of_type('discharge', ['Temperature_measured', 'Time'])
+        temp = np.empty(len(measures))
+
+        for i2, measure in enumerate(measures):
+            ind = np.argmax(measure[0])
+            temp[i2] = measure[1][ind]
+
+        data[i] = temp
+
+    return data
+
+def try_something():
+    bat_nums = list_bat_nums()
+
+    data = np.empty(len(bat_nums), dtype=np.object)
+
+    for i, n in enumerate(bat_nums):
+        file = load_bat(n)
+        e = extract(file)
+
+        measures = e.of_type('discharge', ['Temperature_measured', 'Time'])
+        temp = np.empty(len(measures))
+
+        for i2, measure in enumerate(measures):
+            ind = np.argmax(measure[0])
+            temp[i2] = measure[1][ind]
+
+        data[i] = temp
+
+    return data
+
+#Unusable
+def timeofmax_charge_temperature():
+    bat_nums = list_bat_nums()
+
+    data = np.empty(len(bat_nums), dtype=np.object)
+
+    for i, n in enumerate(bat_nums):
+        file = load_bat(n)
+        e = extract(file)
+
+        measures = e.of_type('charge', ['Temperature_measured', 'Time'])
+        temp = np.empty(len(measures))
+
+        for i2, measure in enumerate(measures):
+            ind = np.argmax(measure[0])
+            temp[i2] = measure[1][ind]
+
+        data[i] = temp
+
+    return data
+
+
+features_dict = {
+            'min_discharge_voltagem': min_discharge_voltage_measured,
+            'min_discharge_voltagec': min_discharge_voltage_charge,
+            'max_charge_temp': timeofmax_charge_temperature,
+            'max_discharge_temp': timeofmax_discharge_temperature}
+
+def get_feature_data(features=['all']):
+    if isinstance(str): features = [features]
+
+    if features == ['all']: features = features_dict.items()
+    else: features = [features_dict[f] for f in features]
+
+
+    x = np.empty(len(features)-1)
+
+    for i, f in enumerate(features):
+        x[i] = f()
+
+    print(x)
+        
+        
