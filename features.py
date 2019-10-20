@@ -135,26 +135,6 @@ def timeofmax_discharge_temperature():
 
     return data
 
-def try_something():
-    bat_nums = list_bat_nums()
-
-    data = np.empty(len(bat_nums), dtype=np.object)
-
-    for i, n in enumerate(bat_nums):
-        file = load_bat(n)
-        e = extract(file)
-
-        measures = e.of_type('discharge', ['Temperature_measured', 'Time'])
-        temp = np.empty(len(measures))
-
-        for i2, measure in enumerate(measures):
-            ind = np.argmax(measure[0])
-            temp[i2] = measure[1][ind]
-
-        data[i] = temp
-
-    return data
-
 #Unusable
 def timeofmax_charge_temperature():
     bat_nums = list_bat_nums()
