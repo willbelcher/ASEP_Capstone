@@ -1,4 +1,5 @@
 from statsmodels.tsa.arima_model import ARIMA
+import numpy as np
 import pickle
 
 from features import *
