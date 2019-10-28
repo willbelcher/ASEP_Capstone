@@ -149,7 +149,7 @@ def timeofmax_charge_temperature():
         temp = np.empty(len(measures))
 
         for i2, measure in enumerate(measures):
-            ind = np.argmax(measure[0])
+            ind = np.argmax(measure[0][1:])
             temp[i2] = measure[1][ind]
 
         data[i] = temp
@@ -163,18 +163,26 @@ features_dict = {
             'max_charge_temp': timeofmax_charge_temperature,
             'max_discharge_temp': timeofmax_discharge_temperature}
 
-def get_feature_data(features=['all']):
-    if isinstance(str): features = [features]
+def get_feature_data(features=['min_discharge_voltagem', 'min_discharge_voltagec']):
+    if isinstance(features, str): features = [features]
 
-    if features == ['all']: features = features_dict.items()
+    if features == ['all']: features = features_dict.values()
     else: features = [features_dict[f] for f in features]
 
-
-    x = np.empty(len(features)-1)
+    x = []
 
     for i, f in enumerate(features):
-        x[i] = f()
+        x.append(f())
 
-    print(x)
-        
+    return x
+    
+def reshape_data(data):
+
+    print(len(data))
+    x = np.reshape(data, (1, -1))
+
+    print(len(x))
+
+    return x
+
         
