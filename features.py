@@ -1,3 +1,4 @@
+from sklearn.model_selection import train_test_split
 import numpy as np
 
 from extracter import *
@@ -54,8 +55,11 @@ def get_capacitance():
 
 
 #Time of min Voltage measured in discharge vs Capacity
-def min_discharge_voltage_measured():
-    bat_nums = list_bat_nums()
+def min_discharge_voltage_measured(battery=-1):
+    if battery == -1:
+        bat_nums = list_bat_nums()
+    else:
+        bat_nums = [battery]
 
     data = np.empty(len(bat_nums), dtype=np.object)
 
@@ -74,8 +78,11 @@ def min_discharge_voltage_measured():
 
     return data
 
-def min_discharge_voltage_charge():
-    bat_nums = list_bat_nums()
+def min_discharge_voltage_charge(battery=-1):
+    if battery == -1:
+        bat_nums = list_bat_nums()
+    else:
+        bat_nums = [battery]
 
     data = np.empty(len(bat_nums), dtype=np.object)
 
@@ -95,8 +102,11 @@ def min_discharge_voltage_charge():
     return data
 
 #Absolute max 
-def absmax_charge_voltage_charge():
-    bat_nums = list_bat_nums()
+def absmax_charge_voltage_charge(battery=-1):
+    if battery == -1:
+        bat_nums = list_bat_nums()
+    else:
+        bat_nums = [battery]
 
     data = np.empty(len(bat_nums), dtype=np.object)
 
@@ -115,9 +125,11 @@ def absmax_charge_voltage_charge():
 
     return data
 
-def timeofmax_discharge_temperature():
-    bat_nums = list_bat_nums()
-
+def timeofmax_discharge_temperature(battery=-1):
+    if battery == -1:
+        bat_nums = list_bat_nums()
+    else:
+        bat_nums = [battery]
     data = np.empty(len(bat_nums), dtype=np.object)
 
     for i, n in enumerate(bat_nums):
@@ -136,8 +148,11 @@ def timeofmax_discharge_temperature():
     return data
 
 #Unusable
-def timeofmax_charge_temperature():
-    bat_nums = list_bat_nums()
+def timeofmax_charge_temperature(battery=-1):
+    if battery == -1:
+        bat_nums = list_bat_nums()
+    else:
+        bat_nums = [battery]
 
     data = np.empty(len(bat_nums), dtype=np.object)
 
@@ -163,7 +178,7 @@ features_dict = {
             'max_charge_temp': timeofmax_charge_temperature,
             'max_discharge_temp': timeofmax_discharge_temperature}
 
-def get_feature_data(features=['min_discharge_voltagem', 'min_discharge_voltagec']):
+def get_feature_data(features=['min_discharge_voltagem', 'min_discharge_voltagec', 'max_charge_temp']):
     if isinstance(features, str): features = [features]
 
     if features == ['all']: features = features_dict.values()
@@ -171,18 +186,26 @@ def get_feature_data(features=['min_discharge_voltagem', 'min_discharge_voltagec
 
     x = []
 
-    for i, f in enumerate(features):
-        x.append(f())
+    for bat in list_bat_nums():
+        temp = []
+        for f in features:
+            temp.append(f(battery=bat))
+
+        #Overly complicated matrix initialization
+        bat = [x[:] for x in [[0] * len(features)] * min([len(t[0]) for t in temp])]
+
+        for i, t in enumerate(temp):
+            for i2, t2 in enumerate(t[0]):
+                if i2 > len(bat)-1: break
+                else: bat[i2][i] = round(t2, 2)
+
+        x.append(bat)
 
     return x
+
+
+def split_data(X, Y, test_size=0.2):
+    return train_test_split(X, Y, test_size=test_size)
+
     
-def reshape_data(data):
-
-    print(len(data))
-    x = np.reshape(data, (1, -1))
-
-    print(len(x))
-
-    return x
-
         

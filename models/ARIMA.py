@@ -2,41 +2,52 @@ from statsmodels.tsa.arima_model import ARIMA
 import numpy as np
 import pickle
 
-from features import *
+from features import get_feature_data, get_capacitance, split_data
 
+
+#Honestly you just need to figure out how this works in terms of inputs and 
+#whatever degrees of freedom are
 class ARIMA_model():
-    def __init__(self):
-        pass
+    def __init__(self, x_train, x_test, y_train, y_test):
+        self.x_train = x_train
+        self.x_test = x_test
+        self.y_train = y_train
+        self.y_test = y_test
 
-    def fit(self, X_train, Y_train, X_test, Y_test):
-        self.model = ARIMA([X_train, Y_train], order=(1,1,1))
+    def fit(self):
+        self.model = ARIMA([self.x_train, self.y_train], order=(5,1,1))
 
         print("[*] Training model")
-        self.model.fit(X_train, Y_train)
+        self.model.fit()
 
         print("[*] Evaluating")
-        self.predict(X_train, Y_train, X_test, Y_test)
+        self.predict(self.x_train, self.y_train, self.x_test, self.y_test)
 
 
-    def predict(self, X_train, Y_train, X_test, Y_test):
-        train_pred = self.model.predict(X_train)
-        test_pred = self.model.predict(X_test)
+    def predict(self):
+        x_train = self.x_train
+        x_test = self.x_test
+        y_train = self.y_train
+        y_test = self.y_test
+
+        train_pred = self.model.predict(x_train)
+        test_pred = self.model.predict(x_test)
 
         print('\nTraining set - predictions')
-        print(Y_train)
+        print(y_train)
         print(np.round(train_pred, 2))
 
         print('\nTesting set - predictions')
-        print(Y_test)
+        print(y_test)
         print(np.round(test_pred, 2))
 
-        train_rmse = np.sqrt(np.mean((train_pred - Y_train) ** 2))
+        train_rmse = np.sqrt(np.mean((train_pred - y_train) ** 2))
 
-        test_rmse = np.sqrt(np.mean((test_pred - Y_test) ** 2))
+        test_rmse = np.sqrt(np.mean((test_pred - y_test) ** 2))
 
         rmse = np.sqrt(np.mean(( \
             np.concatenate((train_pred, test_pred), axis=0) - \
-            np.concatenate((Y_train, Y_test), axis=0))** 2))
+            np.concatenate((y_train, y_test), axis=0))** 2))
 
         print("Estimator evaluation:")
         print("Training set RMSE - {}".format(round(train_rmse, 3)))
@@ -57,21 +68,12 @@ class ARIMA_model():
 
 
 #Handles training the model, allows for changing metrics 'easily'
-def train(model):    
-    
-    data = get_feature_data()
+def get_data():    
+    X = get_feature_data()
+    Y = get_capacitance()
 
-    #split data
-
-    model.fit(X_train, Y_train, X_test, Y_test)
-
-
-def predict(model):
-    X, Y = get_feature_data()
-
-    X_train, Y_train , X_test, Y_test = remove_one_plate(X, Y)
-
-    model.predict(X_train, Y_train, X_test, Y_test)
+    #split training and test set
+    return split_data(X, Y)
 
 
 def save(model):
@@ -94,7 +96,8 @@ def load(model):
 
 #Mainly just UI
 def run():
-    model = ARIMA_model()
+    x_train, x_test, y_train, y_test = get_data()
+    model = ARIMA_model(x_train, x_test, y_train, y_test)
 
     print("\nARIMA")
     
@@ -102,9 +105,9 @@ def run():
         user = input("1. Train\n2. Predict\n3. Save\n4. Load\n5. Quit\n")
         
         if user == '1':
-            train(model)
+            model.fit()
         elif user == '2':
-            predict(model)
+            model.predict()
         elif user == '3':
             save(model)
         elif user == '4':
