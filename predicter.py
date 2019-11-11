@@ -21,6 +21,6 @@ def main():
         elif user == '6':
             break
 
-        print("\n---------------------")
+        print("\n----------MAIN-----------\n")
 
 main()

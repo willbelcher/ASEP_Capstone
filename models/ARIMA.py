@@ -2,11 +2,13 @@ from statsmodels.tsa.arima_model import ARIMA
 import numpy as np
 import pickle
 
-from features import get_feature_data, get_capacitance, split_data
+from features import get_feature_data, get_capacitance, split_data, elementwise_concatenate
 
 
 #Honestly you just need to figure out how this works in terms of inputs and 
 #whatever degrees of freedom are
+#Also figure out how inputs work here, its gonna be a pain
+
 class ARIMA_model():
     def __init__(self, x_train, x_test, y_train, y_test):
         self.x_train = x_train
@@ -15,13 +17,15 @@ class ARIMA_model():
         self.y_test = y_test
 
     def fit(self):
-        self.model = ARIMA([self.x_train, self.y_train], order=(5,1,1))
+        train = elementwise_concatenate(self.x_train, self. y_train)
+        test = elementwise_concatenate(self.x_test, self.y_test)
+        self.model = ARIMA(train, order=(1,0,0))
 
         print("[*] Training model")
         self.model.fit()
 
         print("[*] Evaluating")
-        self.predict(self.x_train, self.y_train, self.x_test, self.y_test)
+        self.predict()
 
 
     def predict(self):
@@ -69,7 +73,7 @@ class ARIMA_model():
 
 #Handles training the model, allows for changing metrics 'easily'
 def get_data():    
-    X = get_feature_data()
+    X = get_feature_data(features='min_discharge_voltagem')
     Y = get_capacitance()
 
     #split training and test set
@@ -97,6 +101,7 @@ def load(model):
 #Mainly just UI
 def run():
     x_train, x_test, y_train, y_test = get_data()
+
     model = ARIMA_model(x_train, x_test, y_train, y_test)
 
     print("\nARIMA")
@@ -115,4 +120,4 @@ def run():
         elif user == '5':
             break
 
-        print("\n-----------RF------------")
+        print("\n----------ARIMA-----------")
