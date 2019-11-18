@@ -3,7 +3,7 @@ from sklearn.svm import SVR
 import numpy as np
 import pickle
 
-from features import *
+from process_data import get_data
 from plot import plot
 
 '''
@@ -102,18 +102,6 @@ class SVR_model():
         print('[*] Model loaded')
 
 
-#Handles training the model, allows for changing metrics 'easily'
-def get_data():    
-    X = get_feature_data(['min_discharge_voltagem', 'min_discharge_voltagec', 'max_discharge_temp'])
-    Y = get_capacitance()
-    
-
-    X, Y = remove_outliers(X, Y)
-
-    #split training and test set
-    return split_data(X, Y)
-
-
 def save(model):
     while True:
         user = input("Would you like to specify a filename? y/n\n")
@@ -134,7 +122,7 @@ def load(model):
 
 #Mainly just UI
 def run():
-    x_train, x_test, y_train, y_test = get_data()
+    x_train, x_test, y_train, y_test = get_data(features='previous_capacity', caps=7)
 
     model = SVR_model(x_train, x_test, y_train, y_test)
 

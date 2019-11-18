@@ -1,5 +1,4 @@
 from sklearn.model_selection import train_test_split
-from copy import deepcopy
 import numpy as np
 
 from extracter import *
@@ -41,42 +40,38 @@ def get_capacitance():
     data = np.empty(len(bat_nums), dtype=np.object)
 
     for i, n in enumerate(bat_nums):
-        file = load_bat(n)
+        file = load_bat(n, disp=False)
         e = extract(file)
 
         measures = e.of_type('discharge')
         temp = np.empty(len(measures))
 
         for i2, measure in enumerate(measures):
-            temp[i2] = e.get_scalar_metrics_from_measure(measure, 'Capacity')
+            temp[i2] = e.get_scalar_from_measure(measure, 'Capacity')
 
         data[i] = temp
 
     return data
 
-def prev_capacitance(battery=-1):
-    if battery == -1:
-        bat_nums = list_bat_nums()
-    else:
-        bat_nums = [battery]
+def prev_capacitance(x, battery=-1, l=5):
 
-    data = np.empty(len(bat_nums), dtype=np.object)
+    #There are faster ways to do this loop, creates offset list of capacities
+    #I'm trying to turn a time series problem into a supervised one by feeding in previous capacities
+    #along with previous battery capacities
+    for offset in range(l):
 
-    for i, n in enumerate(bat_nums):
-        file = load_bat(n)
+        file = load_bat(battery, disp=False)
         e = extract(file)
 
-        measures = e.of_type('discharge')
+        measures = e.of_type('discharge')[offset:]
         temp = np.empty(len(measures), dtype=np.float64)
 
-        temp[0] = e.get_scalar_metrics_from_measure(measures[0], 'Capacity')
+        for i, measure in enumerate(measures):
+            temp[i] = e.get_scalar_from_measure(measure, 'Capacity')
 
-        for i2, measure in enumerate(measures[:-1]):
-            temp[i2+1] = e.get_scalar_metrics_from_measure(measure, 'Capacity')
+        x.append(temp)
 
-        data[i] = temp
-
-    return data
+    return x
 
 #Time of min Voltage measured in discharge vs Capacity
 def min_discharge_voltage_measured(battery=-1):
@@ -88,7 +83,7 @@ def min_discharge_voltage_measured(battery=-1):
     data = np.empty(len(bat_nums), dtype=np.object)
 
     for i, n in enumerate(bat_nums):
-        file = load_bat(n)
+        file = load_bat(n, disp=False)
         e = extract(file)
 
         measures = e.of_type('discharge', ['Voltage_measured', 'Time'])
@@ -111,7 +106,7 @@ def min_discharge_voltage_charge(battery=-1):
     data = np.empty(len(bat_nums), dtype=np.object)
 
     for i, n in enumerate(bat_nums):
-        file = load_bat(n)
+        file = load_bat(n, disp=False)
         e = extract(file)
 
         measures = e.of_type('discharge', ['Voltage_charge', 'Time'])
@@ -135,7 +130,7 @@ def absmax_charge_voltage_charge(battery=-1):
     data = np.empty(len(bat_nums), dtype=np.object)
 
     for i, n in enumerate(bat_nums):
-        file = load_bat(n)
+        file = load_bat(n, disp=False)
         e = extract(file)
 
         measures = e.of_type('charge', ['Voltage_charge', 'Time'])
@@ -157,7 +152,7 @@ def timeofmax_discharge_temperature(battery=-1):
     data = np.empty(len(bat_nums), dtype=np.object)
 
     for i, n in enumerate(bat_nums):
-        file = load_bat(n)
+        file = load_bat(n, disp=False)
         e = extract(file)
 
         measures = e.of_type('discharge', ['Temperature_measured', 'Time'])
@@ -181,7 +176,7 @@ def timeofmax_charge_temperature(battery=-1):
     data = np.empty(len(bat_nums), dtype=np.object)
 
     for i, n in enumerate(bat_nums):
-        file = load_bat(n)
+        file = load_bat(n, disp=False)
         e = extract(file)
 
         measures = e.of_type('charge', ['Temperature_measured', 'Time'])
@@ -195,81 +190,3 @@ def timeofmax_charge_temperature(battery=-1):
 
     return data
 
-
-features_dict = {
-            'min_discharge_voltagem': min_discharge_voltage_measured,
-            'min_discharge_voltagec': min_discharge_voltage_charge,
-            'max_charge_temp': timeofmax_charge_temperature,
-            'max_discharge_temp': timeofmax_discharge_temperature,
-            'previous_capacity': prev_capacitance}
-
-def get_feature_data(features=['min_discharge_voltagem', 'min_discharge_voltagec', 'max_discharge_temp', 'previous_capacity']):
-    if isinstance(features, str): features = [features]
-
-    if features == ['all']: features = features_dict.values()
-    else: features = [features_dict[f] for f in features]
-
-    x = []
-
-    for bat in list_bat_nums():
-        temp = []
-        for f in features:
-            temp.append(f(battery=bat))
-
-        #Overly complicated matrix initialization
-        bat = [x[:] for x in [[0] * len(features)] * min([len(t[0]) for t in temp])]
-
-        for i, t in enumerate(temp):
-            for i2, t2 in enumerate(t[0]):
-                if i2 > len(bat)-1: break
-                else: bat[i2][i] = round(t2, 2)
-
-        x.append(np.array(bat, np.float64))
-
-    return np.array(x, dtype=object)
-
-
-def split_data(X, Y, test_size=0.2):
-    return train_test_split(X, Y, test_size=test_size)
-
-def elementwise_concatenate(x, y):
-    out = []
-
-    for x1, y1 in zip(x, y):
-        temp = []
-        for x2, y2 in zip(x1, y1):
-            if isinstance(y2, np.float64): y2 = [y2]
-
-            temp = x2 + y2
-        out.append(temp)
-
-    return out
-
-
-
-def remove_outliers(X, Y):
-    new_X = deepcopy(X)
-    new_Y = deepcopy(Y)
-    
-    for i, batx, baty in zip(range(len(Y)), X, Y):
-        offset = 0
-
-        q1 = np.percentile(baty, 25)
-        q3 = np.percentile(baty, 75)
-        iqr = q3 - q1
-
-        lower_bound = q1 - 1.5 * iqr
-        upper_bound = q3 + 1.5 * iqr
-
-        for i2, y in enumerate(baty):
-            if (y < lower_bound or y > upper_bound):
-                new_X[i] = np.delete(new_X[i], [i2 - offset], axis=0)
-                new_Y[i] = np.delete(new_Y[i], [i2 - offset], axis=0)
-                offset += 1
-                
-    return new_X, new_Y
-    
-
-
-
-        

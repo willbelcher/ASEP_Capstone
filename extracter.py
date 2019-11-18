@@ -13,14 +13,14 @@ measurement_dict = {'charge': charge_scalar, 'discharge': discharge_scalar, 'imp
 
 measurement_info = ['Ambient_temperature', 'Date']
 
-def load_bat(bat_num):
+def load_bat(bat_num, disp=True):
     if not isinstance(bat_num, str):
         bat_num = str(bat_num)
 
     filename = "B{}.npy".format(bat_num.rjust(4, '0'))
     file = np.load("Dataset_np/" + filename, allow_pickle=True)
 
-    print("[*]Loaded: {} with {} entries".format(filename, len(file)))
+    if disp: print("[*]Loaded: {} with {} entries".format(filename, len(file)))
 
     return file
 
@@ -91,14 +91,10 @@ class extract():
                     temp.append(measure[1])
 
                 out.append(temp)
-
                 counter += 1
-
-                if counter == num:
-                    break
+                if counter == num: break
 
         return out
-
 
     #Takes in one measurement and returns a list of the corresponding
     #metrics, eg. [Voltage measured, time]
@@ -124,7 +120,7 @@ class extract():
 
         return out
 
-    def get_scalar_metrics_from_measure(self, measure, metrics='all'): 
+    def get_scalar_from_measure(self, measure, metrics='all'): 
         out = []
         
         if isinstance(metrics, str) and metrics != 'all':

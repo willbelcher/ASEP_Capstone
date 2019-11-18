@@ -4,7 +4,7 @@ import autograd.numpy as np2
 import numpy as np
 from math import e
 
-from features import get_feature_data, get_capacitance, split_data, elementwise_concatenate
+from features import *
 from plot import plot as plt
 
 class lin_reg():
@@ -30,7 +30,6 @@ class lin_reg():
         x_train = scaler.transform(x_train)
         x_test = scaler.transform(x_test)
    
-
         eps = 1e-15
         weights = np.zeros(x_train.shape[1])
 
@@ -45,7 +44,7 @@ class lin_reg():
             return predictions.clip(eps, 1-eps)
 
         def custom_loss(y, pred_y):
-            return np2.mean((pred_y - y) ** 2)
+            return np2.sqrt(np2.mean((pred_y - y) ** 2))
         
         def custom_loss_with_weights(w):
             y_predicted = logistic_predictions(w, x_train)
@@ -56,7 +55,7 @@ class lin_reg():
 
         print("[*] Training model")
 
-        for i in range(100000):
+        for i in range(150000):
             weights -= gradient(weights) * 0.003
             if i % 5000 == 0:
                 print('Iterations {} | Loss {}'.format(i, round(custom_loss_with_weights(weights), 5)))
@@ -105,6 +104,69 @@ class lin_reg():
         p.show_plot()
         p.close()
 
+    def normal_fit(self):
+        x_train = self.x_train
+        x_test = self.x_test
+        y_train = self.y_train
+        y_test = self.y_test
+
+        x_train = np.concatenate(x_train, axis=0)
+        x_test = np.concatenate(x_test, axis=0)
+        y_train = np.concatenate(y_train, axis=0)
+        y_test = np.concatenate(y_test, axis=0)
+
+        scaler = RobustScaler().fit(np.concatenate((x_train, x_test), axis=0))
+        x_train = scaler.transform(x_train)
+        x_test = scaler.transform(x_test)
+
+        t = np.matmul(x_train.T, x_train)**(-1)
+        t2 = np.matmul(t, x_train.T)
+        weights = np.matmul(t2, y_train)
+
+        print(weights)
+        
+        train_pred = [np.dot(weights, x) for x in x_train]
+        test_pred = [np.dot(weights, x) for x in x_test]
+
+        print("\n[*] Training complete:")
+
+        print('\nTraining set - predictions')
+        print(np.squeeze(y_train)[:20])
+        print(np.round(train_pred, 2)[:20])
+
+        print('\nTesting set - predictions')
+        print(np.squeeze(y_test[:20]))
+        print(np.round(test_pred, 2)[:20])
+
+        train_rmse = np.sqrt(np.mean((train_pred - y_train) ** 2))
+
+        test_rmse = np.sqrt(np.mean((test_pred - y_test) ** 2))
+
+        rmse = np.sqrt(np.mean(( \
+            np.concatenate((train_pred, test_pred), axis=0) - \
+            np.concatenate((y_train, y_test), axis=0)) ** 2))
+
+        print("Estimator evaluation:")
+        print("Training set rmse - {}".format(round(train_rmse, 3)))
+        print("Test set rmse - {}".format(round(test_rmse, 3)))
+        print("RMSE - {}".format(round(rmse, 3)))
+        
+        input("Press Enter to continue")
+
+        print("\n[*]Graphing data...")
+
+        p = plt()
+        for bat in self.y_train[:3]:
+            [pred, train_pred] = np.split(train_pred, [len(bat)-1])
+            p.plot_one_series(range(len(bat)), bat, '', style='-')
+            p.plot_one_series(range(len(pred)), pred, '',  style='--')
+
+        
+        p.label_axes('Cycle', 'Capacity (Ahr)', "Predictions vs Actual")
+        p.show_plot()
+        p.close()
+
+
     #TODO
     def predict(self):
         predictions = 0
@@ -125,6 +187,8 @@ def get_data():
     X = get_feature_data()
     Y = get_capacitance()
 
+    X, Y = remove_outliers(X, Y)
+
     return split_data(X, Y)
 
 #Mainly just UI
@@ -136,17 +200,19 @@ def run():
     print("\nPHM Linear Regression")
     
     while True:
-        user = input("1. Train\n2. Predict\n3. Save\n4. Load\n5. Quit\n")
+        user = input("1. Train\n2. Normal_solve\n3. Predict\n4. Save\n5. Load\n6. Quit\n")
         
         if user == '1':
             model.fit()
         elif user == '2':
-            model.predict()
+            model.normal_fit()
         elif user == '3':
-            model.save()
+            model.predict()
         elif user == '4':
-            model.load()
+            model.save()
         elif user == '5':
+            model.load()
+        elif user == '6':
             break
 
         print("\n--------Linear Regression---------\n")

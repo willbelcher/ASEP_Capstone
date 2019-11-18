@@ -1,29 +1,27 @@
+from sklearn.ensemble import RandomForestRegressor
 import numpy as np
 import pickle
 
-from features import *
+from process_data import get_data
 from plot import plot
 
-class Poly_model():
-    def __init__(self, x_train, x_test, y_train, y_test):
+
+class rf_model():
+    def __init__(self, x_train, x_test, y_train, y_test, num_estimators=10000):
+        self.rf = RandomForestRegressor(num_estimators)
+
         self.x_train = x_train
         self.x_test = x_test
         self.y_train = y_train
         self.y_test = y_test
 
-    def fit(self):
-        x_train = self.x_train
-        x_test = self.x_test
-        y_train = self.y_train
-        y_test = self.y_test
+    def train(self):
 
-        x_train = np.concatenate(x_train, axis=0)
-        x_test = np.concatenate(x_test, axis=0)
-        y_train = np.concatenate(y_train, axis=0)
-        y_test = np.concatenate(y_test, axis=0)
+        x_train = np.concatenate(self.x_train, axis=0)
+        y_train = np.concatenate(self.y_train, axis=0)
 
         print("[*] Training model")
-        self.model = np.polyfit(x_train, y_train, 3)
+        self.rf.fit(x_train, y_train)
 
         print("[*] Evaluating")
         self.predict()
@@ -39,8 +37,8 @@ class Poly_model():
         y_train = np.concatenate(y_train, axis=0)
         y_test = np.concatenate(y_test, axis=0)
 
-        train_pred = [self.model[0] + x ** self.model[1:] for x in x_train]
-        test_pred = [self.model[0] + x ** self.model[1:] for x in x_test]
+        train_pred = self.rf.predict(x_train)
+        test_pred = self.rf.predict(x_test)
 
         print('\nTraining set - predictions')
         print(y_train)
@@ -62,7 +60,7 @@ class Poly_model():
         print("Training set RMSE - {}".format(round(train_rmse, 3)))
         print("Test set RMSE - {}".format(round(test_rmse, 3)))
         print("RMSE - {}".format(round(rmse, 3)))
-        input("Press Enter to continue") 
+        input("Press Enter to continue")  
 
         p = plot()
         for bat in self.y_train[:3]:
@@ -73,31 +71,19 @@ class Poly_model():
         
         p.label_axes('Cycle', 'Capacity (Ahr)', "Predictions vs Actual")
         p.show_plot()
-        p.close()
-
+        p.close()       
 
     def save(self, filename):
         print('[*] Saving model to {}'.format(filename))
-        pickle.dump(self.model, open(filename, 'wb'))
+        pickle.dump(self.rf, open(filename, 'wb'))
         print('[*] Model saved')
 
     def load(self, filename='default'):
         print('[*] Loading model from {}'.format(filename))
-        self.model = pickle.load(open(filename, 'rb'))
+        self.rf = pickle.load(open(filename, 'rb'))
         print('[*] Model loaded')
 
-
 #Handles training the model, allows for changing metrics 'easily'
-def get_data():    
-    X = get_feature_data(['min_discharge_voltagem', 'min_discharge_voltagec', 'max_discharge_temp'])
-    Y = get_capacitance()
-    
-
-    X, Y = remove_outliers(X, Y)
-
-    #split training and test set
-    return split_data(X, Y)
-
 
 def save(model):
     while True:
@@ -116,20 +102,18 @@ def load(model):
     filename = input('Please enter filename\n')
     model.load('saves/' + filename + '.sav')
 
-
 #Mainly just UI
 def run():
     x_train, x_test, y_train, y_test = get_data()
+    model = rf_model(x_train, x_test, y_train, y_test)
 
-    model = Poly_model(x_train, x_test, y_train, y_test)
-
-    print("\nPoly_reg")
+    print("\nPHM Random Forest Regression")
     
     while True:
         user = input("1. Train\n2. Predict\n3. Save\n4. Load\n5. Quit\n")
         
         if user == '1':
-            model.fit()
+            model.train()
         elif user == '2':
             model.predict()
         elif user == '3':
@@ -139,4 +123,4 @@ def run():
         elif user == '5':
             break
 
-        print("\n-----------Poly------------")
+        print("\n-----------RF------------")

@@ -2,7 +2,8 @@ from statsmodels.tsa.arima_model import ARIMA
 import numpy as np
 import pickle
 
-from features import get_feature_data, get_capacitance, split_data, elementwise_concatenate
+from features import *
+from plot import plot
 
 
 #Honestly you just need to figure out how this works in terms of inputs and 
@@ -17,46 +18,38 @@ class ARIMA_model():
         self.y_test = y_test
 
     def fit(self):
-        train = elementwise_concatenate(self.x_train, self. y_train)
-        test = elementwise_concatenate(self.x_test, self.y_test)
-        self.model = ARIMA(train, order=(1,0,0))
-
-        print("[*] Training model")
-        self.model.fit()
-
-        print("[*] Evaluating")
-        self.predict()
-
-
-    def predict(self):
         x_train = self.x_train
         x_test = self.x_test
         y_train = self.y_train
         y_test = self.y_test
 
-        train_pred = self.model.predict(x_train)
-        test_pred = self.model.predict(x_test)
+        #train = np.concatenate(x_train, axis=0)
 
+        ARIMA.endog_names = 'capacity'
+
+        for bat in x_train:
+            y = bat[:, 1]
+            self.model = ARIMA(y, order=(4, 2, 1))
+
+            print("[*] Training model")
+            self.model_fit = self.model.fit()
+
+            print("[*] Evaluating")
+            self.predict(y)
+   
+    def predict(self, y):
+        start = 5
+
+        train_pred = self.model_fit.predict(start=start, end=len(y)-1)
+       
         print('\nTraining set - predictions')
-        print(y_train)
+        print(y)
         print(np.round(train_pred, 2))
 
-        print('\nTesting set - predictions')
-        print(y_test)
-        print(np.round(test_pred, 2))
-
-        train_rmse = np.sqrt(np.mean((train_pred - y_train) ** 2))
-
-        test_rmse = np.sqrt(np.mean((test_pred - y_test) ** 2))
-
-        rmse = np.sqrt(np.mean(( \
-            np.concatenate((train_pred, test_pred), axis=0) - \
-            np.concatenate((y_train, y_test), axis=0))** 2))
+        train_rmse = np.sqrt(np.mean((train_pred - y[start:]) ** 2))
 
         print("Estimator evaluation:")
         print("Training set RMSE - {}".format(round(train_rmse, 3)))
-        print("Test set RMSE - {}".format(round(test_rmse, 3)))
-        print("RMSE - {}".format(round(rmse, 3)))
         input("Press Enter to continue") 
 
 
@@ -73,11 +66,13 @@ class ARIMA_model():
 
 #Handles training the model, allows for changing metrics 'easily'
 def get_data():    
-    X = get_feature_data(features='min_discharge_voltagem')
-    Y = get_capacitance()
+    y = get_capacitance()
+    Y = insert_cycles(y)
+
+    Y, y = remove_outliers(Y, y)
 
     #split training and test set
-    return split_data(X, Y)
+    return split_data(Y, y)
 
 
 def save(model):
