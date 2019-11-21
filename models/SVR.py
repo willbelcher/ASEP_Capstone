@@ -22,7 +22,7 @@ class SVR_model():
         self.y_train = y_train
         self.y_test = y_test
 
-    def fit(self):
+    def fit(self, evaluate=True):
         x_train = self.x_train
         x_test = self.x_test
         y_train = self.y_train
@@ -39,11 +39,12 @@ class SVR_model():
         print("[*] Training model")
         self.model.fit(x_train, y_train)
 
-        print("[*] Evaluating")
-        self.predict()
+        if evaluate:
+            print("[*] Evaluating")
+            self.predict()
 
 
-    def predict(self):
+    def predict(self, show_predictions=True):
         x_train = self.x_train
         x_test = self.x_test
         y_train = self.y_train
@@ -57,13 +58,14 @@ class SVR_model():
         train_pred = self.model.predict(x_train)
         test_pred = self.model.predict(x_test)
 
-        print('\nTraining set - predictions')
-        print(y_train)
-        print(np.round(train_pred, 2))
+        if show_predictions:
+            print('\nTraining set - predictions')
+            print(y_train)
+            print(np.round(train_pred, 2))
 
-        print('\nTesting set - predictions')
-        print(y_test)
-        print(np.round(test_pred, 2))
+            print('\nTesting set - predictions')
+            print(y_test)
+            print(np.round(test_pred, 2))
 
         train_rmse = np.sqrt(np.mean((train_pred - y_train) ** 2))
 
@@ -77,19 +79,30 @@ class SVR_model():
         print("Training set RMSE - {}".format(round(train_rmse, 3)))
         print("Test set RMSE - {}".format(round(test_rmse, 3)))
         print("RMSE - {}".format(round(rmse, 3)))
-        input("Press Enter to continue") 
 
-        p = plot()
-        for bat in self.y_train[:3]:
-            [pred, train_pred] = np.split(train_pred, [len(bat)-1])
-            p.plot_one_series(range(len(bat)), bat, '', style='-')
-            p.plot_one_series(range(len(pred)), pred, '',  style='--')
 
-        
-        p.label_axes('Cycle', 'Capacity (Ahr)', "Predictions vs Actual")
-        p.show_plot()
-        p.close()
+        predictions = np.concatenate((train_pred, test_pred), axis=0)
+        actuals = np.concatenate((y_train, y_test), axis=0)
+        rsqrd = np.sum((predictions - np.mean(actuals)) ** 2)
 
+        print("R^2: {}".format(rsqrd))
+        print()
+
+        if show_predictions:
+            input("Press Enter to continue") 
+
+            p = plot()
+            for bat in self.y_train[:3]:
+                [pred, train_pred] = np.split(train_pred, [len(bat)-1])
+                p.plot_one_series(range(len(bat)), bat, '', style='-')
+                p.plot_one_series(range(len(pred)), pred, '',  style='--')
+
+            
+            p.label_axes('Cycle', 'Capacity (Ahr)', "Predictions vs Actual")
+            p.show_plot()
+            p.close()
+
+        return rmse
 
     def save(self, filename):
         print('[*] Saving model to {}'.format(filename))

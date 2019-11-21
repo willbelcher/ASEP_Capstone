@@ -2,7 +2,7 @@ from statsmodels.tsa.arima_model import ARIMA
 import numpy as np
 import pickle
 
-from features import *
+from process_data import get_data
 from plot import plot
 
 
@@ -63,18 +63,6 @@ class ARIMA_model():
         self.model = pickle.load(open(filename, 'rb'))
         print('[*] Model loaded')
 
-
-#Handles training the model, allows for changing metrics 'easily'
-def get_data():    
-    y = get_capacitance()
-    Y = insert_cycles(y)
-
-    Y, y = remove_outliers(Y, y)
-
-    #split training and test set
-    return split_data(Y, y)
-
-
 def save(model):
     while True:
         user = input("Would you like to specify a filename? y/n\n")
@@ -95,7 +83,7 @@ def load(model):
 
 #Mainly just UI
 def run():
-    x_train, x_test, y_train, y_test = get_data()
+    x_train, x_test, y_train, y_test = get_data(features='previous_capacity', caps=1) #TODO
 
     model = ARIMA_model(x_train, x_test, y_train, y_test)
 

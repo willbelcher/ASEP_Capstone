@@ -10,7 +10,7 @@ features_dict = {
             'max_discharge_temp': timeofmax_discharge_temperature,
             'previous_capacity': prev_capacitance}
 
-def get_data(features=['min_discharge_voltagem', 'min_discharge_voltagec', 'max_discharge_temp', 'previous_capacity'], caps=1):    
+def get_data(features=['min_discharge_voltagem', 'min_discharge_voltagec', 'max_discharge_temp', 'previous_capacity'], caps=1, split=True):    
     print('[*]Loading feature data')
     X = get_feature_data(features, caps)
 
@@ -22,8 +22,12 @@ def get_data(features=['min_discharge_voltagem', 'min_discharge_voltagec', 'max_
     print('[*]Removing outliers')
     X, Y = remove_outliers(X, Y)
 
+    print("X samples:", len(np.concatenate(X, axis=0)))
+    print("Y samples:", len(np.concatenate(Y, axis=0)))
+
     #split training and test set
-    return split_data(X, Y)
+    if split: return split_data(X, Y)
+    else: return X, Y
 
 def get_feature_data(features, caps=1):
     if isinstance(features, str): features = [features]
@@ -37,7 +41,7 @@ def get_feature_data(features, caps=1):
         temp = []
         for f in features:
             if f == prev_capacitance: f(temp, battery=bat, l=caps)
-            else: temp.append(f(battery=bat)[0][caps-1:-1])
+            else: temp.append(f(battery=bat)[0][caps-1:])
 
         #Overly complicated matrix initialization
         bat = [x[:] for x in [[0] * (len(temp))] * min([len(t) for t in temp])]
