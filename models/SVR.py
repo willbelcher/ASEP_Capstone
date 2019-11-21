@@ -80,14 +80,6 @@ class SVR_model():
         print("Test set RMSE - {}".format(round(test_rmse, 3)))
         print("RMSE - {}".format(round(rmse, 3)))
 
-
-        predictions = np.concatenate((train_pred, test_pred), axis=0)
-        actuals = np.concatenate((y_train, y_test), axis=0)
-        rsqrd = np.sum((predictions - np.mean(actuals)) ** 2)
-
-        print("R^2: {}".format(rsqrd))
-        print()
-
         if show_predictions:
             input("Press Enter to continue") 
 
