@@ -4,7 +4,7 @@ import autograd.numpy as np2
 import numpy as np
 from math import e
 
-from features import *
+from process_data import get_data
 from plot import plot as plt
 
 class lin_reg():
@@ -181,15 +181,6 @@ class lin_reg():
 
     def load(self, filename='default'):
         raise NotImplementedError
-
-
-def get_data():    
-    X = get_feature_data()
-    Y = get_capacitance()
-
-    X, Y = remove_outliers(X, Y)
-
-    return split_data(X, Y)
 
 #Mainly just UI
 def run():

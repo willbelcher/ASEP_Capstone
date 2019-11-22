@@ -58,7 +58,7 @@ def plot_capacitance(battery_num, metric2='Date', max_measurements=-1): #fix for
         print('[-]Pick Cycles or Date for metric2')
         return 
 
-    y = [extr.get_scalar_metrics_from_measure(measure) for measure in measures]
+    y = [extr.get_scalar_from_measure(measure) for measure in measures]
 
     p = plot()
     p.plot_one_series(x, y, 'Capacity and {}'.format(metric2))

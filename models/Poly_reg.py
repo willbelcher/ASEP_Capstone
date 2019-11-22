@@ -1,7 +1,7 @@
 import numpy as np
 import pickle
 
-from features import *
+from process_data import get_data
 from plot import plot
 
 class Poly_model():
@@ -17,10 +17,10 @@ class Poly_model():
         y_train = self.y_train
         y_test = self.y_test
 
-        x_train = np.concatenate(x_train, axis=0)
-        x_test = np.concatenate(x_test, axis=0)
-        y_train = np.concatenate(y_train, axis=0)
-        y_test = np.concatenate(y_test, axis=0)
+        x_train = np.concatenate(x_train, axis=0).flatten()
+        x_test = np.concatenate(x_test, axis=0).flatten()
+        y_train = np.concatenate(y_train, axis=0).flatten()
+        y_test = np.concatenate(y_test, axis=0).flatten()
 
         print("[*] Training model")
         self.model = np.polyfit(x_train, y_train, 3)
@@ -34,10 +34,10 @@ class Poly_model():
         y_train = self.y_train
         y_test = self.y_test
 
-        x_train = np.concatenate(x_train, axis=0)
-        x_test = np.concatenate(x_test, axis=0)
-        y_train = np.concatenate(y_train, axis=0)
-        y_test = np.concatenate(y_test, axis=0)
+        x_train = np.concatenate(x_train, axis=0).flatten()
+        x_test = np.concatenate(x_test, axis=0).flatten()
+        y_train = np.concatenate(y_train, axis=0).flatten()
+        y_test = np.concatenate(y_test, axis=0).flatten()
 
         train_pred = [self.model[0] + x ** self.model[1:] for x in x_train]
         test_pred = [self.model[0] + x ** self.model[1:] for x in x_test]
@@ -86,19 +86,6 @@ class Poly_model():
         self.model = pickle.load(open(filename, 'rb'))
         print('[*] Model loaded')
 
-
-#Handles training the model, allows for changing metrics 'easily'
-def get_data():    
-    X = get_feature_data(['min_discharge_voltagem', 'min_discharge_voltagec', 'max_discharge_temp'])
-    Y = get_capacitance()
-    
-
-    X, Y = remove_outliers(X, Y)
-
-    #split training and test set
-    return split_data(X, Y)
-
-
 def save(model):
     while True:
         user = input("Would you like to specify a filename? y/n\n")
@@ -119,7 +106,7 @@ def load(model):
 
 #Mainly just UI
 def run():
-    x_train, x_test, y_train, y_test = get_data()
+    x_train, x_test, y_train, y_test = get_data(features=['min_discharge_voltagem'])
 
     model = Poly_model(x_train, x_test, y_train, y_test)
 

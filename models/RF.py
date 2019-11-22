@@ -7,7 +7,7 @@ from plot import plot
 
 
 class rf_model():
-    def __init__(self, x_train, x_test, y_train, y_test, num_estimators=10000):
+    def __init__(self, x_train, x_test, y_train, y_test, num_estimators=500):
         self.rf = RandomForestRegressor(num_estimators)
 
         self.x_train = x_train

@@ -43,7 +43,7 @@ def get_feature_data(features, caps=1):
             if f == prev_capacitance: f(temp, battery=bat, l=caps)
             else: temp.append(f(battery=bat)[0][caps-1:])
 
-        #Overly complicated matrix initialization
+        #Matrix initialization
         bat = [x[:] for x in [[0] * (len(temp))] * min([len(t) for t in temp])]
 
         for i, t in enumerate(temp):
